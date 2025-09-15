@@ -5,11 +5,24 @@ import logging
 import matplotlib.pyplot as plt
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+import datetime
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config.json')
-LOG_PATH = os.path.join(os.path.dirname(__file__), 'world.log')
+# 日志文件写入 log 子文件夹
+log_dir = os.path.join(os.path.dirname(__file__), 'log')
+os.makedirs(log_dir, exist_ok=True)
+# 日志文件名带时间戳
+now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_PATH = os.path.join(log_dir, f'world_{now}.log')
 
-logging.basicConfig(filename=LOG_PATH, filemode='w', level=logging.INFO, format='%(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_PATH, mode='w'),
+        logging.StreamHandler()
+    ]
+)
 
 # 加载Qwen3-1.7B模型和分词器（全局只加载一次）
 LLM_MODEL_PATH = "/Users/zxc/project/data/model/Qwen3-1.7B"
@@ -220,19 +233,9 @@ class Character:
 
     def llm_decide_action(self, world, enable_thinking=False):
         # 构造prompt，包含角色属性、世界状态等
-        prompt = f"""You are a character in a simulated world. Your state:\n" \
-            f"Name: {self.name}\n" \
-            f"Age: {self.age}\n" \
-            f"Health: {self.health}\n" \
-            f"Wealth: {self.wealth}\n" \
-            f"Mood: {self.mood}\n" \
-            f"Hunger: {self.hunger}\n" \
-            f"Personality: {self.personality}\n" \
-            f"Preference: {self.preference}\n" \
-            f"Reputation: {self.reputation}\n" \
-            f"Location: {self.location}\n" \
-            f"Relationships: {self.relationships}\n" \
-            f"What is the best action to take next? Choose from: work, shop, entertain, learn, heal, invest, interact, rest, move. Only output the action word."""
+        prompt = f"""
+You are a character in a simulated world. Your state:, Name: {self.name}, Age: {self.age}, Health: {self.health}, Wealth: {self.wealth}, Mood: {self.mood}, Hunger: {self.hunger}, Personality: {self.personality}, Preference: {self.preference}, Reputation: {self.reputation}, Location: {self.location}, Relationships: {self.relationships}.
+What is the best action to take next? Choose from: work, shop, entertain, learn, heal, invest, interact, rest, move. Only output the action word."""
         messages = [{"role": "user", "content": prompt}]
         chat_prompt = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True, enable_thinking=enable_thinking
@@ -250,7 +253,7 @@ class Character:
         action = tokenizer.decode(output_ids, skip_special_tokens=True).strip().lower()
         # 只保留第一个单词
         action_res = action.split()[0] if action else "rest"
-        print(f"{messages} -> {action} -> {action_res}")
+        logging.info(f"{messages} -> {action} -> {action_res}")
         return action_res
 
 # 世界类
@@ -341,7 +344,6 @@ class World:
                 self.characters[i] = Character(new_name)
 
     def run_day(self, actions=None):
-        print(f"\n=== 第{self.day}天 ===")
         logging.info(f"\n=== 第{self.day}天 ===")
         day_actions = {}
         for c in self.characters:
@@ -386,14 +388,12 @@ class World:
             pairs[0].interact(pairs[1], self)
         self.remove_dead()
         # 打印行为信息
-        print("角色行为：")
+        logging.info("角色行为：")
         for name, act in day_actions.items():
-            print(f"{name}: {act}")
-        print("\n角色状态：")
+            logging.info(f"{name}: {act}")
         logging.info("\n角色状态：")
         for c in self.characters:
             status = c.status()
-            print(status)
             logging.info(status)
         self.day += 1
         return day_actions
@@ -438,7 +438,7 @@ class Visualizer:
 
 # 简单单元测试
 def test_character_life():
-    print("\n[TEST] 角色生活行为测试")
+    logging.info("\n[TEST] 角色生活行为测试")
     c = Character("Test", {"health": 50, "wealth": 20, "items": {"食物": 1}, "location": "家", "hunger": 10})
     w = World()
     hunger_before = c.hunger
@@ -446,17 +446,17 @@ def test_character_life():
     c.live(w)
     assert c.health >= health_before, "吃饭或休息后健康应增加"
     assert c.hunger < hunger_before, "吃饭后饥饿应减少"
-    print("通过")
+    logging.info("通过")
 
 def test_event_system():
-    print("\n[TEST] 事件系统测试")
+    logging.info("\n[TEST] 事件系统测试")
     c = Character("Test", {"health": 100, "wealth": 100, "work_skill": 5})
     w = World()
     # 强制触发生病事件
     event = Event("生病", lambda c, w: setattr(c, 'health', c.health - 15), 1.0)
     event.trigger(c, w)
     assert c.health == 85, "生病后健康应减少15"
-    print("通过")
+    logging.info("通过")
 
 if __name__ == "__main__":
     # 测试
@@ -481,4 +481,4 @@ if __name__ == "__main__":
             stats[c.name]['mood'].append(c.mood)
             stats[c.name]['reputation'].append(c.reputation)
             actions[c.name].append(day_actions.get(c.name, 'dead'))
-    Visualizer.plot_stats(stats, names, actions)
+    # Visualizer.plot_stats(stats, names, actions)
