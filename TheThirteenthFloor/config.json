@@ -1,0 +1,22 @@
+{
+  "characters": [
+    {"name": "Ava", "age": 25, "personality": "外向", "preference": "娱乐"},
+    {"name": "Ben", "age": 30, "personality": "内向", "preference": "学习"},
+    {"name": "Cara", "age": 28, "personality": "冒险", "preference": "购物"},
+    {"name": "Dan", "age": 35, "personality": "保守", "preference": "投资"},
+    {"name": "Eve", "age": 22, "personality": "慷慨", "preference": "社交"}
+  ],
+  "items": [
+    {"name": "食物", "price": 10, "effect": {"health": 5, "hunger": -20}},
+    {"name": "药品", "price": 20, "effect": {"health": 15}},
+    {"name": "书籍", "price": 15, "effect": {"experience": 5}},
+    {"name": "玩具", "price": 12, "effect": {"mood": 10}},
+    {"name": "股票", "price": 30, "effect": {"wealth": "random"}}
+  ],
+  "events": [
+    {"name": "生病", "effect": {"health": -15}, "probability": 0.1},
+    {"name": "中奖", "effect": {"wealth": 50}, "probability": 0.05},
+    {"name": "失业", "effect": {"work_skill": -2}, "probability": 0.05},
+    {"name": "结交新朋友", "effect": {"relationship": 2}, "probability": 0.1}
+  ]
+}
